@@ -24,6 +24,17 @@ const AIRTABLE_CONFIG = {
     tables: {
         productInitiatives: 'tblVWOpUxLKYe9Dza',
     },
+    fieldIds: {
+        initiativeName: 'fldjpIPSu6P5PvQZP',
+        quarter: 'fldGQgyO0tXpet4vz',
+        initiativeDeliverable: 'fldyHSSsmDMcMWHNS',
+        enggReleaseDate: 'fldaud11YQVGj9AIh',
+        launchDate: 'fldEtYEvDoBRI1yrQ',
+        releaseCadence: 'fldx9hTSKn2pvVZuJ',
+        releaseNameV2: 'fldHgevpqlEDryXdR',
+        enggBaseKey: 'fld7RxnxqKH059aRj',
+        monthKey: 'flduNs2PE5m9tfUJd',
+    },
 };
 
 const COLOR_SCHEME = {
@@ -78,18 +89,20 @@ function safeLookup(record, field) {
     } catch { return ''; }
 }
 
+const F = AIRTABLE_CONFIG.fieldIds;
+
 function transformRecord(record) {
     return {
         id: record.id,
-        'Initiative Name': safeStr(record, 'Initiative Name'),
-        'Quarter': safeArr(record, 'Quarter'),
-        'Initiative Deliverable': safeSelect(record, 'Initiative Deliverable'),
+        'Initiative Name': safeStr(record, F.initiativeName),
+        'Quarter': safeArr(record, F.quarter),
+        'Initiative Deliverable': safeSelect(record, F.initiativeDeliverable),
         'Engg Support Needed?': safeSelect(record, 'Engg Support Needed?'),
         'Big Rock': safeLookup(record, 'Big Rock'),
-        'Engg Release Date': safeStr(record, 'Engg Release Date'),
-        'Launch Date': safeStr(record, 'Launch Date'),
-        'Release Cadence': safeSelect(record, 'Release Cadence'),
-        'Release Name V2': safeStr(record, 'Release Name V2'),
+        'Engg Release Date': safeStr(record, F.enggReleaseDate),
+        'Launch Date': safeStr(record, F.launchDate),
+        'Release Cadence': safeSelect(record, F.releaseCadence),
+        'Release Name V2': safeStr(record, F.releaseNameV2),
         'Product Pillar': safeSelect(record, 'Product Pillar'),
         'PM POC': safeCollaborators(record, 'PM POC'),
         'PRD Link': safeStr(record, 'PRD Link'),
@@ -572,7 +585,7 @@ const ReleaseCalendar = ({ data }) => {
 
 function App() {
     const base = useBase();
-    const table = base.getTableIfExists('Product Initiatives') || base.tables[0];
+    const table = base.getTableById(AIRTABLE_CONFIG.tables.productInitiatives);
     const rawRecords = useRecords(table || base.tables[0]);
 
     const data = useMemo(
