@@ -339,10 +339,19 @@ const FilterPanel = ({ data, filters, onFilterChange, onClearFilters, hasActiveF
                     <h2 className={`text-sm font-semibold ${cls.text} flex items-center gap-2`}>
                         <FunnelIcon className="w-4 h-4" weight="fill" />
                         Filters
+                        {hasActiveFilters && (
+                            <span className="ml-1 px-1.5 py-0.5 bg-blue-600 text-white text-[10px] font-bold rounded-full leading-none">
+                                {Object.values(filters).filter(Boolean).length}
+                            </span>
+                        )}
                     </h2>
                     {hasActiveFilters && (
-                        <button onClick={onClearFilters} className="text-xs font-medium text-blue-500 hover:text-blue-400 underline">
-                            Clear All
+                        <button
+                            onClick={onClearFilters}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white text-xs font-semibold rounded-lg transition"
+                        >
+                            <XIcon className="w-3 h-3" weight="bold" />
+                            Clear Filters
                         </button>
                     )}
                 </div>
