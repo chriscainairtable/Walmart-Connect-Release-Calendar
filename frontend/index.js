@@ -34,6 +34,7 @@ const AIRTABLE_CONFIG = {
         releaseNameV2: 'fldHgevpqlEDryXdR',
         enggBaseKey: 'fld7RxnxqKH059aRj',
         monthKey: 'flduNs2PE5m9tfUJd',
+        releaseVersion: 'fldoGBefh4r7zbQSr',
     },
 };
 
@@ -110,6 +111,7 @@ function transformRecord(record) {
         'Launch Date': safeDate(record, F.launchDate),
         'Release Cadence': safeSelect(record, F.releaseCadence),
         'Release Name V2': safeStr(record, F.releaseNameV2),
+        'Release Version': safeStr(record, F.releaseVersion),
         'Product Pillar': safeSelect(record, 'Product Pillar'),
         'PM POC': safeCollaborators(record, 'PM POC'),
         'PRD Link': safeStr(record, 'PRD Link'),
@@ -283,7 +285,7 @@ const CalendarEvent = ({ event, onClick }) => (
         title={event.tooltip}
     >
         <div className="font-bold text-[10px] opacity-80 mb-0.5">
-            {event.type === 'release' ? '[REL]' : '[LAUNCH]'}
+            {event.type === 'release' ? (event.versionLabel || '[REL]') : '[LAUNCH]'}
         </div>
         <div className="truncate leading-tight">{event.title}</div>
         {event.type === 'release' && event.group && (
@@ -473,6 +475,7 @@ const ReleaseCalendar = ({ data, totalLoaded }) => {
         });
         Object.entries(releaseGroups).forEach(([releaseName, initiatives]) => {
             const cadence = initiatives[0]?.['Release Cadence'] || '';
+            const releaseVersion = initiatives[0]?.['Release Version'] || '';
             const color = cadence.toLowerCase().includes('major')
                 ? COLOR_SCHEME.majorRelease
                 : cadence.toLowerCase().includes('minor')
@@ -482,6 +485,7 @@ const ReleaseCalendar = ({ data, totalLoaded }) => {
                 id: `rel-${dateStr}-${releaseName}`,
                 type: 'release',
                 title: releaseName,
+                versionLabel: releaseVersion,
                 tooltip: `${initiatives.length} initiative${initiatives.length !== 1 ? 's' : ''}`,
                 color,
                 group: { releaseName, date: dateStr, initiatives, cadence },
