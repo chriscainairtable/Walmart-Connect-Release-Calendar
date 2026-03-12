@@ -358,7 +358,7 @@ const FilterPanel = ({ data, filters, onFilterChange, onClearFilters, hasActiveF
 // MAIN CALENDAR
 // ============================================================================
 
-const ReleaseCalendar = ({ data }) => {
+const ReleaseCalendar = ({ data, totalLoaded }) => {
     const colorScheme = useColorScheme();
     const dark = colorScheme === 'dark';
 
@@ -458,7 +458,7 @@ const ReleaseCalendar = ({ data }) => {
                     <CalendarIcon className={`w-7 h-7 ${dark ? 'text-blue-400' : 'text-blue-600'}`} weight="fill" />
                     <div>
                         <h1 className={`text-2xl font-bold ${cls.text}`}>FY27 WMC Product QEP Release Calendar</h1>
-                        <p className={`text-sm ${cls.sub} mt-0.5`}>Track engineering releases and product launches</p>
+                        <p className={`text-sm ${cls.sub} mt-0.5`}>Track engineering releases and product launches · <span className="font-medium">{totalLoaded} records loaded</span></p>
                     </div>
                 </div>
             </div>
@@ -585,8 +585,9 @@ const ReleaseCalendar = ({ data }) => {
 
 function App() {
     const base = useBase();
-    const table = base.getTableById(AIRTABLE_CONFIG.tables.productInitiatives);
-    const rawRecords = useRecords(table || base.tables[0]);
+    // Find table by ID safely — getTableById can throw in interface context
+    const table = base.tables.find(t => t.id === AIRTABLE_CONFIG.tables.productInitiatives) || base.tables[0];
+    const rawRecords = useRecords(table);
 
     const data = useMemo(
         () => (rawRecords || []).map(transformRecord),
@@ -601,7 +602,7 @@ function App() {
         );
     }
 
-    return <ReleaseCalendar data={data} />;
+    return <ReleaseCalendar data={data} totalLoaded={data.length} />;
 }
 
 initializeBlock({ interface: () => <App /> });
