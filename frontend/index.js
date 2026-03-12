@@ -38,8 +38,10 @@ const AIRTABLE_CONFIG = {
 };
 
 const COLOR_SCHEME = {
-    release: '#3B82F6',
-    launch: '#10B981',
+    majorRelease: '#10B981',  // green
+    minorRelease: '#F97316',  // orange
+    release: '#3B82F6',       // blue fallback
+    launch: '#3B82F6',        // blue
     pillarColors: {
         Display: '#3B82F6',
         'Sponsored Product Platform': '#8B5CF6',
@@ -470,13 +472,19 @@ const ReleaseCalendar = ({ data, totalLoaded }) => {
             }
         });
         Object.entries(releaseGroups).forEach(([releaseName, initiatives]) => {
+            const cadence = initiatives[0]?.['Release Cadence'] || '';
+            const color = cadence.toLowerCase().includes('major')
+                ? COLOR_SCHEME.majorRelease
+                : cadence.toLowerCase().includes('minor')
+                    ? COLOR_SCHEME.minorRelease
+                    : COLOR_SCHEME.release;
             events.push({
                 id: `rel-${dateStr}-${releaseName}`,
                 type: 'release',
                 title: releaseName,
                 tooltip: `${initiatives.length} initiative${initiatives.length !== 1 ? 's' : ''}`,
-                color: COLOR_SCHEME.release,
-                group: { releaseName, date: dateStr, initiatives },
+                color,
+                group: { releaseName, date: dateStr, initiatives, cadence },
             });
         });
 
@@ -618,14 +626,17 @@ const ReleaseCalendar = ({ data, totalLoaded }) => {
                 {/* Legend */}
                 <div className={`mt-4 flex flex-wrap items-center gap-4 text-xs ${cls.sub}`}>
                     <span className="flex items-center gap-1.5">
-                        <span className="w-3 h-3 rounded-sm inline-block" style={{ backgroundColor: COLOR_SCHEME.release }} />
-                        Engineering Release
+                        <span className="w-3 h-3 rounded-sm inline-block" style={{ backgroundColor: COLOR_SCHEME.majorRelease }} />
+                        Major Release
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                        <span className="w-3 h-3 rounded-sm inline-block" style={{ backgroundColor: COLOR_SCHEME.minorRelease }} />
+                        Minor Release
                     </span>
                     <span className="flex items-center gap-1.5">
                         <span className="w-3 h-3 rounded-sm inline-block" style={{ backgroundColor: COLOR_SCHEME.launch }} />
-                        Product Launch
+                        Initiative Launch
                     </span>
-                    <span className={`${dark ? 'text-gray-600' : 'text-gray-400'}`}>· Colors vary by Product Pillar / Deliverable Type</span>
                 </div>
             </div>
 
