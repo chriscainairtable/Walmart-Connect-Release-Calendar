@@ -4,10 +4,26 @@ import {
     CaretLeftIcon,
     CaretRightIcon,
     XIcon,
-    CalendarIcon,
     FunnelIcon,
     ArrowSquareOutIcon,
 } from '@phosphor-icons/react';
+
+const WalmartSpark = ({ size = 36 }) => (
+    <div style={{
+        width: size, height: size,
+        backgroundColor: '#4DBDF5',
+        borderRadius: Math.round(size * 0.22),
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        flexShrink: 0,
+    }}>
+        <svg viewBox="0 0 100 100" width={size * 0.64} height={size * 0.64}>
+            {[0, 60, 120, 180, 240, 300].map(deg => (
+                <rect key={deg} x="43" y="7" width="14" height="37" rx="7" fill="white"
+                    transform={`rotate(${deg} 50 50)`} />
+            ))}
+        </svg>
+    </div>
+);
 import {
     initializeBlock,
     useBase,
@@ -629,7 +645,7 @@ const ReleaseCalendar = ({ data, totalLoaded }) => {
             {/* Header */}
             <div className={`${cls.header} border-b px-6 py-5`}>
                 <div className="max-w-7xl mx-auto flex items-center gap-3">
-                    <CalendarIcon className={`w-7 h-7 ${dark ? 'text-blue-400' : 'text-blue-600'}`} weight="fill" />
+                    <WalmartSpark size={40} />
                     <div>
                         <h1 className={`text-2xl font-bold ${cls.text}`}>FY27 WMC Product QEP Release Calendar</h1>
                         <p className={`text-sm ${cls.sub} mt-0.5`}>Track engineering releases and product launches · <span className="font-medium">{totalLoaded} records loaded</span></p>
