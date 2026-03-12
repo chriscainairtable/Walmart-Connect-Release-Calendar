@@ -258,15 +258,8 @@ const RecordDetailModal = ({ record, onClose, dark }) => {
                     )}
                 </div>
 
-                <div className={`${c.border} border-t px-6 py-4 flex gap-3`}>
-                    <button onClick={onClose} className={`flex-1 px-4 py-2 ${c.btn} rounded-lg font-medium transition text-sm`}>Close</button>
-                    <a
-                        href={`https://airtable.com/${AIRTABLE_CONFIG.baseId}/${AIRTABLE_CONFIG.tables.productInitiatives}/${record.id}`}
-                        target="_blank" rel="noopener noreferrer"
-                        className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition flex items-center justify-center gap-2 text-sm"
-                    >
-                        <ArrowSquareOutIcon className="w-4 h-4" />Open in Airtable
-                    </a>
+                <div className={`${c.border} border-t px-6 py-4`}>
+                    <button onClick={onClose} className={`w-full px-4 py-2 ${c.btn} rounded-lg font-medium transition text-sm`}>Close</button>
                 </div>
             </div>
         </div>
