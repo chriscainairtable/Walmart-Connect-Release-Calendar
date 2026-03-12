@@ -418,10 +418,12 @@ const ReleaseCalendar = ({ data, totalLoaded }) => {
     const colorScheme = useColorScheme();
     const dark = colorScheme === 'dark';
 
-    const [currentDate, setCurrentDate] = useState(new Date(2026, 2)); // March 2026
-    const [selectedRecord, setSelectedRecord] = useState(null); // launch modal
-    const [selectedGroup, setSelectedGroup] = useState(null);   // release group modal
+    const [currentDate, setCurrentDate] = useState(new Date(2026, 2, 1)); // March 2026
+    const [selectedRecord, setSelectedRecord] = useState(null);
+    const [selectedGroup, setSelectedGroup] = useState(null);
     const [filters, setFilters] = useState({ quarter: '', deliverable: '', cadence: '', search: '' });
+    const [viewMode, setViewMode] = useState('month'); // 'month' | 'week' | 'custom'
+    const [customDays, setCustomDays] = useState(14);
 
     const cls = dark ? {
         page: 'bg-gray-950', header: 'bg-gray-900 border-gray-700', text: 'text-white',
@@ -457,14 +459,59 @@ const ReleaseCalendar = ({ data, totalLoaded }) => {
 
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
-    const firstDay = new Date(year, month, 1).getDay();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const monthName = currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
-    const daysArray = [
-        ...Array(firstDay).fill(null),
-        ...Array.from({ length: daysInMonth }, (_, i) => new Date(year, month, i + 1)),
-    ];
+    // Build days array based on view mode
+    const { daysArray, numCols, rangeLabel } = useMemo(() => {
+        if (viewMode === 'month') {
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            return {
+                daysArray: [
+                    ...Array(firstDay).fill(null),
+                    ...Array.from({ length: daysInMonth }, (_, i) => new Date(year, month, i + 1)),
+                ],
+                numCols: 7,
+                rangeLabel: currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+            };
+        }
+        if (viewMode === 'week') {
+            const dow = currentDate.getDay();
+            const start = new Date(currentDate);
+            start.setDate(start.getDate() - dow);
+            const days = Array.from({ length: 7 }, (_, i) => { const d = new Date(start); d.setDate(d.getDate() + i); return d; });
+            const fmt = d => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            return { daysArray: days, numCols: 7, rangeLabel: `${fmt(days[0])} – ${fmt(days[6])}, ${days[0].getFullYear()}` };
+        }
+        // custom
+        const n = customDays;
+        const days = Array.from({ length: n }, (_, i) => { const d = new Date(currentDate); d.setDate(d.getDate() + i); return d; });
+        const cols = n <= 3 ? n : n <= 5 ? 5 : 7;
+        const fmt = d => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        const last = days[days.length - 1];
+        return { daysArray: days, numCols: cols, rangeLabel: `${fmt(days[0])} – ${fmt(last)}, ${days[0].getFullYear()}` };
+    }, [viewMode, currentDate, customDays, year, month]);
+
+    // Navigation step based on view mode
+    const navigate = (dir) => {
+        if (viewMode === 'month') {
+            setCurrentDate(new Date(year, month + dir, 1));
+        } else if (viewMode === 'week') {
+            const d = new Date(currentDate);
+            d.setDate(d.getDate() + dir * 7);
+            setCurrentDate(d);
+        } else {
+            const d = new Date(currentDate);
+            d.setDate(d.getDate() + dir * customDays);
+            setCurrentDate(d);
+        }
+    };
+
+    // Day header labels — show day name + date for week/custom
+    const dayHeaders = useMemo(() => {
+        if (viewMode === 'month') return ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        return daysArray.map(d => `${dayNames[d.getDay()]}\n${d.getDate()}`);
+    }, [viewMode, daysArray]);
 
     const getEventsForDate = (date) => {
         if (!date) return [];
@@ -568,40 +615,73 @@ const ReleaseCalendar = ({ data, totalLoaded }) => {
                 {/* Calendar */}
                 <div className={`${cls.cal} rounded-xl shadow-sm overflow-hidden border ${cls.calBorder}`}>
                     {/* Nav */}
-                    <div className={`flex items-center justify-between px-6 py-4 border-b ${cls.calBorder}`}>
-                        <h2 className={`text-xl font-bold ${cls.text}`}>{monthName}</h2>
-                        <div className="flex gap-1">
-                            <button
-                                onClick={() => setCurrentDate(new Date(year, month - 1))}
-                                className={`p-2 rounded-lg ${cls.navBtn} transition`}
-                            >
-                                <CaretLeftIcon className="w-5 h-5" weight="bold" />
-                            </button>
-                            <button
-                                onClick={() => setCurrentDate(new Date(year, month + 1))}
-                                className={`p-2 rounded-lg ${cls.navBtn} transition`}
-                            >
-                                <CaretRightIcon className="w-5 h-5" weight="bold" />
-                            </button>
+                    <div className={`flex items-center justify-between gap-4 px-6 py-4 border-b ${cls.calBorder} flex-wrap`}>
+                        <h2 className={`text-xl font-bold ${cls.text} shrink-0`}>{rangeLabel}</h2>
+                        <div className="flex items-center gap-2 ml-auto flex-wrap">
+                            {/* View mode toggle */}
+                            <div className={`flex rounded-lg overflow-hidden border ${cls.calBorder}`}>
+                                {[['month', 'Month'], ['week', 'Week'], ['custom', 'Custom']].map(([mode, label]) => (
+                                    <button
+                                        key={mode}
+                                        onClick={() => setViewMode(mode)}
+                                        className={`px-3 py-1.5 text-xs font-semibold transition ${
+                                            viewMode === mode
+                                                ? 'bg-blue-600 text-white'
+                                                : `${dark ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-100'}`
+                                        }`}
+                                    >
+                                        {label}
+                                    </button>
+                                ))}
+                            </div>
+                            {/* Custom days selector */}
+                            {viewMode === 'custom' && (
+                                <select
+                                    value={customDays}
+                                    onChange={e => setCustomDays(Number(e.target.value))}
+                                    className={`px-2 py-1.5 text-xs font-medium rounded-lg border ${dark ? 'bg-gray-800 border-gray-600 text-gray-100' : 'bg-white border-gray-300 text-gray-900'} focus:outline-none focus:ring-1 focus:ring-blue-500`}
+                                >
+                                    {[1, 3, 5, 7, 10, 14, 21, 28].map(n => (
+                                        <option key={n} value={n}>{n} {n === 1 ? 'day' : 'days'}</option>
+                                    ))}
+                                </select>
+                            )}
+                            {/* Prev / Next */}
+                            <div className="flex gap-1">
+                                <button onClick={() => navigate(-1)} className={`p-2 rounded-lg ${cls.navBtn} transition`}>
+                                    <CaretLeftIcon className="w-5 h-5" weight="bold" />
+                                </button>
+                                <button onClick={() => navigate(1)} className={`p-2 rounded-lg ${cls.navBtn} transition`}>
+                                    <CaretRightIcon className="w-5 h-5" weight="bold" />
+                                </button>
+                            </div>
                         </div>
                     </div>
 
                     {/* Day headers */}
-                    <div className={`grid grid-cols-7 border-b ${cls.calBorder}`}>
-                        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
-                            <div key={d} className={`py-3 text-center text-xs font-semibold ${cls.dayHead}`}>{d}</div>
+                    <div className={`grid border-b ${cls.calBorder}`} style={{ gridTemplateColumns: `repeat(${numCols}, minmax(0, 1fr))` }}>
+                        {dayHeaders.map((label, i) => (
+                            <div key={i} className={`py-2 text-center text-xs font-semibold ${cls.dayHead} leading-tight`}>
+                                {label.includes('\n') ? (
+                                    <>
+                                        <div>{label.split('\n')[0]}</div>
+                                        <div className="text-sm font-bold mt-0.5">{label.split('\n')[1]}</div>
+                                    </>
+                                ) : label}
+                            </div>
                         ))}
                     </div>
 
                     {/* Days */}
-                    <div className="grid grid-cols-7">
+                    <div className="grid" style={{ gridTemplateColumns: `repeat(${numCols}, minmax(0, 1fr))` }}>
                         {daysArray.map((date, i) => {
                             const events = getEventsForDate(date);
                             const todayHighlight = isToday(date);
+                            const cellMinH = viewMode === 'month' ? 'min-h-36' : viewMode === 'week' ? 'min-h-48' : 'min-h-64';
                             return (
                                 <div
                                     key={i}
-                                    className={`min-h-36 border-r border-b ${cls.calBorder} p-2 transition ${
+                                    className={`${cellMinH} border-r border-b ${cls.calBorder} p-2 transition ${
                                         date ? cls.dayCell : cls.emptyCell
                                     }`}
                                 >
