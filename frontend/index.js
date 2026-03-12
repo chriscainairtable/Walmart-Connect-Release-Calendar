@@ -118,67 +118,120 @@ function transformRecord(record) {
 // MODAL
 // ============================================================================
 
-const RecordDetailModal = ({ record, onClose, dark }) => {
-    if (!record) return null;
+const modalCls = (dark) => dark ? {
+    bg: 'bg-gray-900', border: 'border-gray-700', text: 'text-white',
+    sub: 'text-gray-400', label: 'text-gray-500',
+    btn: 'bg-gray-700 text-gray-100 hover:bg-gray-600',
+    hover: 'hover:bg-gray-700', row: 'bg-gray-800 hover:bg-gray-750',
+    rowBorder: 'border-gray-700',
+} : {
+    bg: 'bg-white', border: 'border-gray-200', text: 'text-gray-900',
+    sub: 'text-gray-600', label: 'text-gray-500',
+    btn: 'bg-gray-200 text-gray-900 hover:bg-gray-300',
+    hover: 'hover:bg-gray-100', row: 'bg-gray-50 hover:bg-gray-100',
+    rowBorder: 'border-gray-200',
+};
 
-    const fmt = (v) => v || '—';
-    const fmtDate = (d) => {
-        if (!d) return '—';
-        return new Date(d + 'T00:00:00').toLocaleDateString('en-US', {
-            year: 'numeric', month: 'short', day: 'numeric',
-        });
-    };
+const fmtDate = (d) => {
+    if (!d) return '—';
+    return new Date(d + 'T00:00:00').toLocaleDateString('en-US', {
+        year: 'numeric', month: 'short', day: 'numeric',
+    });
+};
 
-    const base = dark ? {
-        bg: 'bg-gray-900', border: 'border-gray-700', text: 'text-white',
-        sub: 'text-gray-400', label: 'text-gray-500', row: 'bg-gray-800',
-        btn: 'bg-gray-700 text-gray-100 hover:bg-gray-600',
-        hover: 'hover:bg-gray-700',
-    } : {
-        bg: 'bg-white', border: 'border-gray-200', text: 'text-gray-900',
-        sub: 'text-gray-600', label: 'text-gray-500', row: 'bg-gray-50',
-        btn: 'bg-gray-200 text-gray-900 hover:bg-gray-300',
-        hover: 'hover:bg-gray-100',
-    };
-
-    const delivColor = COLOR_SCHEME.deliverableColors[record['Initiative Deliverable']] || '#6B7280';
+// Release group modal — shows all initiatives in a release
+const ReleaseGroupModal = ({ group, onClose, dark }) => {
+    if (!group) return null;
+    const c = modalCls(dark);
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
-            <div className={`${base.bg} rounded-xl shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-y-auto`}>
+            <div className={`${c.bg} rounded-xl shadow-2xl max-w-2xl w-full max-h-[85vh] flex flex-col`}>
                 {/* Header */}
-                <div className={`sticky top-0 ${base.bg} ${base.border} border-b px-6 py-4 flex items-start justify-between gap-4`}>
+                <div className={`${c.bg} ${c.border} border-b px-6 py-4 flex items-start justify-between gap-4 rounded-t-xl`}>
                     <div>
-                        <p className={`text-xs font-semibold uppercase tracking-wider ${base.label} mb-1`}>Initiative Details</p>
-                        <h2 className={`text-lg font-bold ${base.text} leading-tight`}>
-                            {fmt(record['Initiative Name'])}
-                        </h2>
+                        <p className={`text-xs font-semibold uppercase tracking-wider ${c.label} mb-1`}>Engineering Release</p>
+                        <h2 className={`text-lg font-bold ${c.text} leading-tight`}>{group.releaseName}</h2>
+                        <p className={`text-sm ${c.sub} mt-0.5`}>{fmtDate(group.date)} · {group.initiatives.length} initiative{group.initiatives.length !== 1 ? 's' : ''}</p>
                     </div>
-                    <button onClick={onClose} className={`mt-1 p-2 ${base.hover} rounded-lg transition shrink-0`}>
+                    <button onClick={onClose} className={`mt-1 p-2 ${c.hover} rounded-lg transition shrink-0`}>
                         <XIcon className="w-5 h-5" weight="bold" />
                     </button>
                 </div>
 
-                {/* Body */}
+                {/* Initiative list */}
+                <div className="overflow-y-auto flex-1 px-6 py-4 space-y-2">
+                    {group.initiatives.map((d) => {
+                        const delivColor = COLOR_SCHEME.deliverableColors[d['Initiative Deliverable']] || '#6B7280';
+                        const pillarColor = COLOR_SCHEME.pillarColors[d['Product Pillar']] || '#6B7280';
+                        return (
+                            <div key={d.id} className={`${c.row} ${c.rowBorder} border rounded-lg px-4 py-3`}>
+                                <div className="flex items-start justify-between gap-3">
+                                    <p className={`text-sm font-semibold ${c.text} leading-snug flex-1`}>{d['Initiative Name'] || '—'}</p>
+                                    <div className="flex items-center gap-1.5 shrink-0">
+                                        {d['Initiative Deliverable'] && (
+                                            <span className="text-xs font-semibold px-2 py-0.5 rounded-full text-white" style={{ backgroundColor: delivColor }}>
+                                                {d['Initiative Deliverable']}
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-3 mt-1.5 flex-wrap">
+                                    {d['Product Pillar'] && (
+                                        <span className="text-xs font-medium flex items-center gap-1" style={{ color: pillarColor }}>
+                                            <span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: pillarColor }} />
+                                            {d['Product Pillar']}
+                                        </span>
+                                    )}
+                                    {d['PM POC'] && <span className={`text-xs ${c.sub}`}>{d['PM POC']}</span>}
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+
+                {/* Footer */}
+                <div className={`${c.border} border-t px-6 py-4 rounded-b-xl`}>
+                    <button onClick={onClose} className={`w-full px-4 py-2 ${c.btn} rounded-lg font-medium transition text-sm`}>
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// Single initiative modal — for launch events
+const RecordDetailModal = ({ record, onClose, dark }) => {
+    if (!record) return null;
+    const c = modalCls(dark);
+    const fmt = (v) => v || '—';
+    const delivColor = COLOR_SCHEME.deliverableColors[record['Initiative Deliverable']] || '#6B7280';
+
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
+            <div className={`${c.bg} rounded-xl shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-y-auto`}>
+                <div className={`sticky top-0 ${c.bg} ${c.border} border-b px-6 py-4 flex items-start justify-between gap-4`}>
+                    <div>
+                        <p className={`text-xs font-semibold uppercase tracking-wider ${c.label} mb-1`}>Initiative Details</p>
+                        <h2 className={`text-lg font-bold ${c.text} leading-tight`}>{fmt(record['Initiative Name'])}</h2>
+                    </div>
+                    <button onClick={onClose} className={`mt-1 p-2 ${c.hover} rounded-lg transition shrink-0`}>
+                        <XIcon className="w-5 h-5" weight="bold" />
+                    </button>
+                </div>
+
                 <div className="px-6 py-5">
-                    {/* Deliverable badge */}
                     <div className="mb-5">
-                        <span
-                            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-white text-sm font-semibold"
-                            style={{ backgroundColor: delivColor }}
-                        >
+                        <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-white text-sm font-semibold" style={{ backgroundColor: delivColor }}>
                             {fmt(record['Initiative Deliverable'])}
                         </span>
                     </div>
-
-                    {/* Fields grid */}
                     <div className="grid grid-cols-2 gap-x-8 gap-y-5">
                         {[
-                            ['Engg Release Date', fmtDate(record['Engg Release Date'])],
                             ['Launch Date', fmtDate(record['Launch Date'])],
-                            ['Quarter', Array.isArray(record['Quarter'])
-                                ? record['Quarter'].map(q => q?.name || q).join(', ') || '—'
-                                : fmt(record['Quarter'])],
+                            ['Engg Release Date', fmtDate(record['Engg Release Date'])],
+                            ['Quarter', Array.isArray(record['Quarter']) ? record['Quarter'].map(q => q?.name || q).join(', ') || '—' : fmt(record['Quarter'])],
                             ['Product Pillar', fmt(record['Product Pillar'])],
                             ['Release Cadence', fmt(record['Release Cadence'])],
                             ['Engg Support Needed?', fmt(record['Engg Support Needed?'])],
@@ -186,45 +239,29 @@ const RecordDetailModal = ({ record, onClose, dark }) => {
                             ['PM POC', fmt(record['PM POC'])],
                         ].map(([label, value]) => (
                             <div key={label}>
-                                <p className={`text-xs font-semibold uppercase tracking-wide ${base.label} mb-1`}>{label}</p>
-                                <p className={`text-sm ${base.text}`}>{value}</p>
+                                <p className={`text-xs font-semibold uppercase tracking-wide ${c.label} mb-1`}>{label}</p>
+                                <p className={`text-sm ${c.text}`}>{value}</p>
                             </div>
                         ))}
                     </div>
-
-                    {/* PRD Link */}
                     {record['PRD Link'] && (
-                        <div className={`mt-5 pt-5 ${base.border} border-t`}>
-                            <p className={`text-xs font-semibold uppercase tracking-wide ${base.label} mb-2`}>PRD Link</p>
-                            <a
-                                href={record['PRD Link']}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-blue-500 hover:text-blue-400 font-medium flex items-center gap-2 text-sm"
-                            >
-                                <ArrowSquareOutIcon className="w-4 h-4" />
-                                View PRD
+                        <div className={`mt-5 pt-5 ${c.border} border-t`}>
+                            <p className={`text-xs font-semibold uppercase tracking-wide ${c.label} mb-2`}>PRD Link</p>
+                            <a href={record['PRD Link']} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-400 font-medium flex items-center gap-2 text-sm">
+                                <ArrowSquareOutIcon className="w-4 h-4" />View PRD
                             </a>
                         </div>
                     )}
                 </div>
 
-                {/* Footer */}
-                <div className={`${base.border} border-t px-6 py-4 flex gap-3`}>
-                    <button
-                        onClick={onClose}
-                        className={`flex-1 px-4 py-2 ${base.btn} rounded-lg font-medium transition text-sm`}
-                    >
-                        Close
-                    </button>
+                <div className={`${c.border} border-t px-6 py-4 flex gap-3`}>
+                    <button onClick={onClose} className={`flex-1 px-4 py-2 ${c.btn} rounded-lg font-medium transition text-sm`}>Close</button>
                     <a
                         href={`https://airtable.com/${AIRTABLE_CONFIG.baseId}/${AIRTABLE_CONFIG.tables.productInitiatives}/${record.id}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                        target="_blank" rel="noopener noreferrer"
                         className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition flex items-center justify-center gap-2 text-sm"
                     >
-                        <ArrowSquareOutIcon className="w-4 h-4" />
-                        Open in Airtable
+                        <ArrowSquareOutIcon className="w-4 h-4" />Open in Airtable
                     </a>
                 </div>
             </div>
@@ -247,6 +284,9 @@ const CalendarEvent = ({ event, onClick }) => (
             {event.type === 'release' ? '[REL]' : '[LAUNCH]'}
         </div>
         <div className="truncate leading-tight">{event.title}</div>
+        {event.type === 'release' && event.group && (
+            <div className="text-[10px] opacity-70 mt-0.5">{event.group.initiatives.length} initiative{event.group.initiatives.length !== 1 ? 's' : ''}</div>
+        )}
     </div>
 );
 
@@ -368,7 +408,8 @@ const ReleaseCalendar = ({ data, totalLoaded }) => {
     const dark = colorScheme === 'dark';
 
     const [currentDate, setCurrentDate] = useState(new Date(2026, 2)); // March 2026
-    const [selectedRecord, setSelectedRecord] = useState(null);
+    const [selectedRecord, setSelectedRecord] = useState(null); // launch modal
+    const [selectedGroup, setSelectedGroup] = useState(null);   // release group modal
     const [filters, setFilters] = useState({ quarter: '', deliverable: '', cadence: '', search: '' });
 
     const cls = dark ? {
@@ -419,17 +460,28 @@ const ReleaseCalendar = ({ data, totalLoaded }) => {
         const dateStr = date.toISOString().split('T')[0];
         const events = [];
 
+        // --- Releases: group by Release Name V2 (or fallback key) ---
+        const releaseGroups = {};
         filteredData.forEach(d => {
             if (d['Engg Release Date'] === dateStr) {
-                events.push({
-                    id: `${d.id}-rel`,
-                    type: 'release',
-                    title: d['Release Name V2'] || d['Initiative Name'],
-                    tooltip: `Release: ${d['Initiative Name']}`,
-                    color: COLOR_SCHEME.pillarColors[d['Product Pillar']] || COLOR_SCHEME.release,
-                    record: d,
-                });
+                const key = d['Release Name V2'] || 'Release';
+                if (!releaseGroups[key]) releaseGroups[key] = [];
+                releaseGroups[key].push(d);
             }
+        });
+        Object.entries(releaseGroups).forEach(([releaseName, initiatives]) => {
+            events.push({
+                id: `rel-${dateStr}-${releaseName}`,
+                type: 'release',
+                title: releaseName,
+                tooltip: `${initiatives.length} initiative${initiatives.length !== 1 ? 's' : ''}`,
+                color: COLOR_SCHEME.release,
+                group: { releaseName, date: dateStr, initiatives },
+            });
+        });
+
+        // --- Launches: individual cards ---
+        filteredData.forEach(d => {
             if (d['Launch Date'] === dateStr) {
                 events.push({
                     id: `${d.id}-launch`,
@@ -548,7 +600,10 @@ const ReleaseCalendar = ({ data, totalLoaded }) => {
                                                     <CalendarEvent
                                                         key={event.id}
                                                         event={event}
-                                                        onClick={() => setSelectedRecord(event.record)}
+                                                        onClick={() => event.type === 'release'
+                                                            ? setSelectedGroup(event.group)
+                                                            : setSelectedRecord(event.record)
+                                                        }
                                                     />
                                                 ))}
                                             </div>
@@ -574,7 +629,11 @@ const ReleaseCalendar = ({ data, totalLoaded }) => {
                 </div>
             </div>
 
-            {/* Modal */}
+            <ReleaseGroupModal
+                group={selectedGroup}
+                onClose={() => setSelectedGroup(null)}
+                dark={dark}
+            />
             <RecordDetailModal
                 record={selectedRecord}
                 onClose={() => setSelectedRecord(null)}
