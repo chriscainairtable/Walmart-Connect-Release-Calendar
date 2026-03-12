@@ -270,22 +270,73 @@ const RecordDetailModal = ({ record, onClose, dark }) => {
 // CALENDAR EVENT
 // ============================================================================
 
-const CalendarEvent = ({ event, onClick }) => (
-    <div
-        onClick={onClick}
-        className="text-xs font-semibold px-2 py-1.5 rounded mb-1 cursor-pointer hover:opacity-90 hover:scale-[1.02] transition-all"
-        style={{ backgroundColor: event.color, color: 'white' }}
-        title={event.tooltip}
-    >
-        <div className="font-bold text-[10px] opacity-80 mb-0.5">
-            {event.type === 'release' ? (event.versionLabel || '[REL]') : '[LAUNCH]'}
+const CalendarEvent = ({ event, onClick }) => {
+    const [showTooltip, setShowTooltip] = React.useState(false);
+
+    const badgeLabel = event.type === 'launch'
+        ? 'Launch'
+        : (event.group?.cadence || '').toLowerCase().includes('major')
+            ? 'Major Release'
+            : (event.group?.cadence || '').toLowerCase().includes('minor')
+                ? 'Minor Release'
+                : 'Release';
+
+    const tooltipLines = event.type === 'release'
+        ? [
+            event.versionLabel || event.title,
+            `${event.group?.initiatives?.length || 0} initiative${(event.group?.initiatives?.length || 0) !== 1 ? 's' : ''}`,
+            event.group?.cadence || '',
+          ].filter(Boolean)
+        : [event.title];
+
+    const cardTitle = event.type === 'release'
+        ? (event.versionLabel || event.title)
+        : event.title;
+
+    return (
+        <div
+            className="relative mb-1"
+            onMouseEnter={() => setShowTooltip(true)}
+            onMouseLeave={() => setShowTooltip(false)}
+        >
+            <div
+                onClick={onClick}
+                className="text-xs font-semibold px-2.5 py-2 rounded-lg cursor-pointer hover:brightness-110 hover:scale-[1.02] transition-all"
+                style={{ backgroundColor: event.color, color: 'white' }}
+            >
+                {/* Badge */}
+                <div className="mb-1.5">
+                    <span className="inline-block text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wide"
+                        style={{ backgroundColor: 'rgba(255,255,255,0.22)', color: 'white' }}>
+                        {badgeLabel}
+                    </span>
+                </div>
+                {/* Title */}
+                <div className="font-semibold text-[11px] leading-snug truncate">{cardTitle}</div>
+                {/* Count for releases */}
+                {event.type === 'release' && event.group && (
+                    <div className="text-[10px] mt-0.5" style={{ opacity: 0.75 }}>
+                        {event.group.initiatives.length} initiative{event.group.initiatives.length !== 1 ? 's' : ''}
+                    </div>
+                )}
+            </div>
+
+            {/* Hover tooltip */}
+            {showTooltip && (
+                <div className="absolute bottom-full left-0 mb-1.5 z-[999] pointer-events-none" style={{ minWidth: '180px', maxWidth: '260px' }}>
+                    <div className="bg-gray-900 border border-gray-700 text-white text-xs rounded-lg px-3 py-2.5 shadow-2xl leading-snug">
+                        <div className="font-semibold text-[11px] mb-1 text-white leading-tight">{tooltipLines[0]}</div>
+                        {tooltipLines.slice(1).map((line, i) => (
+                            <div key={i} className="text-gray-400 text-[10px]">{line}</div>
+                        ))}
+                    </div>
+                    {/* Arrow */}
+                    <div className="w-2 h-2 bg-gray-900 border-b border-r border-gray-700 rotate-45 ml-3 -mt-1.5" />
+                </div>
+            )}
         </div>
-        <div className="truncate leading-tight">{event.title}</div>
-        {event.type === 'release' && event.group && (
-            <div className="text-[10px] opacity-70 mt-0.5">{event.group.initiatives.length} initiative{event.group.initiatives.length !== 1 ? 's' : ''}</div>
-        )}
-    </div>
-);
+    );
+};
 
 // ============================================================================
 // FILTER PANEL
@@ -681,7 +732,7 @@ const ReleaseCalendar = ({ data, totalLoaded }) => {
                             return (
                                 <div
                                     key={i}
-                                    className={`${cellMinH} border-r border-b ${cls.calBorder} p-2 transition ${
+                                    className={`${cellMinH} border-r border-b ${cls.calBorder} p-2 transition overflow-visible relative ${
                                         date ? cls.dayCell : cls.emptyCell
                                     }`}
                                 >
@@ -694,7 +745,7 @@ const ReleaseCalendar = ({ data, totalLoaded }) => {
                                             }`}>
                                                 {date.getDate()}
                                             </div>
-                                            <div className="space-y-0.5">
+                                            <div className="space-y-0.5 overflow-visible">
                                                 {events.map(event => (
                                                     <CalendarEvent
                                                         key={event.id}
