@@ -68,6 +68,11 @@ const COLOR_SCHEME = {
 function safeStr(record, field) {
     try { return record.getCellValueAsString(field) || ''; } catch { return ''; }
 }
+function safeDate(record, field) {
+    // getCellValue() returns ISO "2026-03-12" for date fields
+    // getCellValueAsString() returns locale text — DO NOT use for date comparisons
+    try { const v = record.getCellValue(field); return v ? String(v).split('T')[0] : ''; } catch { return ''; }
+}
 function safeSelect(record, field) {
     try { const v = record.getCellValue(field); return v?.name || ''; } catch { return ''; }
 }
@@ -99,8 +104,8 @@ function transformRecord(record) {
         'Initiative Deliverable': safeSelect(record, F.initiativeDeliverable),
         'Engg Support Needed?': safeSelect(record, 'Engg Support Needed?'),
         'Big Rock': safeLookup(record, 'Big Rock'),
-        'Engg Release Date': safeStr(record, F.enggReleaseDate),
-        'Launch Date': safeStr(record, F.launchDate),
+        'Engg Release Date': safeDate(record, F.enggReleaseDate),
+        'Launch Date': safeDate(record, F.launchDate),
         'Release Cadence': safeSelect(record, F.releaseCadence),
         'Release Name V2': safeStr(record, F.releaseNameV2),
         'Product Pillar': safeSelect(record, 'Product Pillar'),
