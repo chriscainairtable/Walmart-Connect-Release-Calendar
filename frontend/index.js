@@ -605,7 +605,7 @@ const ReleaseCalendar = ({ data, totalLoaded }) => {
                     type: 'launch',
                     title: d['Initiative Name'],
                     tooltip: `Launch: ${d['Initiative Name']}`,
-                    color: COLOR_SCHEME.deliverableColors[d['Initiative Deliverable']] || COLOR_SCHEME.launch,
+                    color: COLOR_SCHEME.launch,
                     record: d,
                 });
             }
