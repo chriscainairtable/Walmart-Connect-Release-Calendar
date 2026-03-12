@@ -313,9 +313,14 @@ const FilterPanel = ({ data, filters, onFilterChange, onClearFilters, hasActiveF
         return Array.from(s).sort();
     }, [data]);
 
+    const EXCLUDED_DELIVERABLES = new Set(['Design only', 'Discovery only', 'N/A']);
     const deliverables = useMemo(() => {
         const s = new Set();
-        data.forEach(d => { if (d['Initiative Deliverable']) s.add(d['Initiative Deliverable']); });
+        data.forEach(d => {
+            if (d['Initiative Deliverable'] && !EXCLUDED_DELIVERABLES.has(d['Initiative Deliverable'])) {
+                s.add(d['Initiative Deliverable']);
+            }
+        });
         return Array.from(s).sort();
     }, [data]);
 
