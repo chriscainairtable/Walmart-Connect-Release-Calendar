@@ -1,0 +1,28 @@
+name: Brand Compliance Audit
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'frontend/**'
+      - 'src/**'
+      - '**.js'
+      - '**.tsx'
+      - '**.ts'
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Claude Code
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Run Brand Compliance Audit
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          AIRTABLE_PAT: ${{ secrets.AIRTABLE_PAT_DEMO }}
+        run: |
+          claude --print --allowedTools "Bash,Read,Glob,Grep" \
+            -p "$(cat .github/prompts/brand-compliance-audit.md)"
